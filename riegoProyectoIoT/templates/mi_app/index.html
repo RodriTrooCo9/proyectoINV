@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>app responsiva</title>
+    <meta name="title" content="weatherio">
+    <meta name="description" content="weatherio es una aplicación del clima hecha por codewithsadee">
+    <link rel="shortcut icon" href="{% static 'favicon.svg' %}" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}">
+    <script src="{% static 'assets/js/app.js' %}" type="module"></script>
+    <script src="{% static 'assets/js/route.js' %}" type="module"></script>
+    <script src="{% static 'assets/js/api.js' %}"></script>
+    <script>document.querySelectorAll('.control-buttons button').forEach(button => {
+    button.addEventListener('click', function() {
+        const action = this.getAttribute('data-action');
+        const device = this.getAttribute('data-device');
+        
+        // Realiza la solicitud AJAX a Django
+        fetch(`/control/${device}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'), // Asegúrate de manejar el token CSRF
+            },
+            body: JSON.stringify({ action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log(`${device.charAt(0).toUpperCase() + device.slice(1)} ${action === 'on' ? 'activado' : 'desactivado'}`);
+            } else {
+                console.error(`Error: ${data.message}`);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
+
+// Función para obtener el token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Verifica si este cookie comienza con el nombre que buscamos
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+</head>
+<body>
+    {% block content %}
+
+    <header class="header">
+        <div class="container">
+            <a href="#" class="logo">
+                <img src="{% static 'assets/images/logo.png' %}" alt="logo" width="364" height="58">
+            </a>
+
+            <div class="search-view active" data-search-view>
+                <div class="search-wrapper">
+                    <input type="search" name="search" placeholder="Buscar..." autocomplete="off" class="search-field" data-search-field>
+                    <span class="m-icon leading-icon">search</span>
+
+                    <button class="icon-btn leading-icon has-state" aria-label="cerrar búsqueda" data-search-toggler>
+                        <span class="m-icon">arrow_back</span>
+                    </button>
+
+                </div>
+                <div class="search-result" data-search-result></div>
+            </div>
+
+            <div class="header-actions">
+                <button class="icon-btn has-state" aria-label="abrir búsqueda" data-search-toggler>
+                    <span class="m-icon">search</span>
+                </button>
+
+                <a href="#/current-location" class="btn-primary has-state" data-current-location-btn>
+                    <span class="m-icon">my_location</span>
+                    <span class="span">Ubicación Actual</span>
+                </a>
+            </div>
+
+        </div>
+    </header>
+
+    <main>
+        <article class="container" data-container="">
+            <div class="content-left">
+                <section class="section current-weather" aria-label="clima actual" data-current-weather>
+                    <div class="card card-lg current-weather-card">
+                        <h2 class="title-2 card-title">Hoy</h2>
+                        <div class="wrapper">
+                            <p class="heading">25&deg; <sup>c</sup></p>
+                            <img src="{% static 'assets/images/weather_icons/01d.png' %}" alt="Nubes dispersas" width="64" height="64" class="weather-icon">
+                        </div>
+                        <p class="body-3">Nublado</p>
+                        <ul class="meta-list">
+                            <li class="meta-item">
+                                <span class="m-icon">calendar_today</span>
+                                <p class="title-3 meta-text">sábado 27, oct</p>
+                            </li>
+                            <li class="meta-item">
+                                <span class="m-icon">location_on</span>
+                                <p class="title-3 meta-text">La Paz, LP</p>
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="section forecast" aria-labelledby="forecast-label" data-5-day-forecast>
+                    <h2 class="title-2" id="forecast-label">Pronóstico de 5 días</h2>
+                    <div class="card card-lg forecast-card">
+                        <ul>
+                            {% for day in forecast %}
+                            <li class="card-item">
+                                <div class="icon-wrapper">
+                                    <img src="{% static 'assets/images/weather_icons/01n.png' %}" alt="Nubes dispersas" class="weather-icon" width="36" height="36">
+                                    <span class="span">
+                                        <p class="title-2">{{ day.temp }}</p>
+                                    </span>
+                                </div>
+                                <p class="label-1">{{ day.date }}</p>
+                                <p class="label-1">{{ day.day_name }}</p>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
+            <div class="content-right">
+                <section class="section highlights" aria-labelledby="highlights-label" data-highlights>
+                    <div class="card card-lg">
+                        <h2 class="title-2" id="highlights-label">Lo más destacado de hoy</h2>
+                        <div class="highlight-list">
+                            <div class="card card-sm highlight-card one">
+                                <h3 class="title-3">Índice de calidad del aire</h3>
+                                <div class="wrapper">
+                                    <span class="m-icon">air</span>
+                                    <ul class="card-list">
+                                        {% for item in air_quality %}
+                                        <li class="card-item">
+                                            <p class="title-1">{{ item.value }}</p>
+                                            <p class="label-1">PM <sub>{{ item.pm }}</sub></p>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <span class="badge aqi-1 label-1" title="mensaje aqi">{{ air_quality_status }}</span>
+                            </div>
+
+                            <div class="card card-sm highlight-card two">
+                                <h3 class="title-3">Amanecer y atardecer</h3>
+                                <div class="card-list">
+                                    <div class="card-item">
+                                        <span class="m-icon">clear-day</span>
+                                        <p class="label-1">Amanecer</p>
+                                        <p class="title-1">{{ sunrise }}</p>
+                                    </div>
+                                    <div class="card-item">
+                                        <span class="m-icon">clear-night</span>
+                                        <p class="label-1">Atardecer</p>
+                                        <p class="title-1">{{ sunset }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card card-sm highlight-card">
+                                <h3 class="title-3">Humedad</h3>
+                                <div class="wrapper">
+                                    <span class="m-icon">humidity_percentage</span>
+                                    <p class="title-1">{{ humidity }} <sup>%</sup></p>
+                                </div>
+                            </div>
+
+                            <div class="card card-sm highlight-card">
+                                <h3 class="title-3">Aire</h3>
+                                <div class="wrapper">
+                                    <span class="m-icon">airware</span>
+                                    <p class="title-1">{{ pressure }} <sup>hPa</sup></p>
+                                </div>
+                            </div>
+
+                            <div class="card card-sm highlight-card">
+                                <h3 class="title-3">Visibilidad</h3>
+                                <div class="wrapper">
+                                    <span class="m-icon">visibility</span>
+                                    <p class="title-1">{{ visibility }} <sup>KM</sup></p>
+                                </div>
+                            </div>
+
+                            <div class="card card-sm highlight-card">
+                                <h3 class="title-3">Temperatura Atmosférica</h3>
+                                <div class="wrapper">
+                                    <span class="m-icon">thermostat</span>
+                                    <p class="title-1">{{ temperature }} <sup>&deg;c</sup></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section hourly-forecast" aria-label="pronóstico horario" data-hourly-forecast>
+    <h2 class="title-2">Controles de el Arduino</h2>
+    <div class="slider-container">
+        <ul class="slider-list" data-temp>
+            {% for hour in hourly_forecast %}
+            <li class="slider-item">
+                <div class="card card-sm slider-card">
+                    <p class="body-3">{{ hour.time }}</p>
+                    <img src="{% static 'assets/images/weather_icons/01n.png' %}" alt="" loading="lazy" height="48" width="48" class="weather-icon">
+                    <p class="body-3">{{ hour.temp }}&deg;</p>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <ul class="slider-list" data-wind>
+            {% for wind in hourly_wind_forecast %}
+            <li class="slider-item">
+                <div class="card card-sm slider-card">
+                    <p class="body-3">{{ wind.time }}</p>
+                    <img src="{% static 'assets/images/weather_icons/01n.png' %}" alt="" loading="lazy" height="48" width="48" class="weather-icon">
+                    <p class="body-3">{{ wind.speed }} km/h</p>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Controles de Arduino -->
+    <div class="arduino-controls">
+        <h3 class="title-3">Controles del Sistema de Riego</h3>
+        <div class="control-buttons">
+            <button id="activate-irrigation" class="btn-primary">Activar Riego</button>
+            <button id="deactivate-irrigation" class="btn-secondary">Desactivar Riego</button>
+            <button id="activate-fan" class="btn-primary">Activar Ventilador</button>
+            <button id="deactivate-fan" class="btn-secondary">Desactivar Ventilador</button>
+        </div>
+    </div>
+</section>
+
+            </div>
+        </article>
+
+        {% endblock content %}
+
+        <footer>
+            <div class="container">
+                <p class="footer-text">Creado por <a href="https://codewithsadee.com">codewithsadee</a></p>
+            </div>
+        </footer>
+    </main>
+</body>
+</html>
